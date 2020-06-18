@@ -8,25 +8,30 @@ import emoji
 import json_logging
 from flask import Flask, render_template, jsonify
 from slack import WebClient
+from flask_cors import CORS
 from dotenv import load_dotenv
 from slack.errors import SlackApiError
 from slackeventsapi import SlackEventAdapter
 from flask_socketio import SocketIO
 
+
 load_dotenv()
 debug = os.environ.get('DEBUG')
-listen_port = os.environ.get('LISTEN_PORT')
+listen_port = os.environ.get('PORT')
 mirror_channel = os.environ.get('MIRROR_CHANNEL')
 slack_signing_secret = os.environ.get('SLACK_SIGNING_SECRET')
 
 app = Flask('slackmirror')
 app.logger.setLevel(os.environ.get('LOG_LEVEL', 'DEBUG'))
+
 if not debug:
     json_logging.init_flask(enable_json=True)
     json_logging.init_request_instrument(app)
 
 slack_client = WebClient(os.environ.get('SLACK_BOT_TOKEN'))
 slack_events_adapter = SlackEventAdapter(slack_signing_secret, "/slack/events", server=app)
+CORS(app)
+logging.getLogger('flask_cors').level = logging.DEBUG
 
 cache = {'user': {}, 'channel': {}, 'emoji': {}, 'messages': deque(maxlen=10)}
 
@@ -117,5 +122,5 @@ if __name__ == '__main__':
         app.logger.info('Loading emojis')
         cache['emoji'] = {k.replace(':', ''): v for k, v in emoji.unicode_codes.EMOJI_ALIAS_UNICODE.items()}
         cache['emoji'].update(slack_client.api_call('emoji.list').get('emoji'))
-        socketio = SocketIO(app)
+        socketio = SocketIO(app, cors_allowed_origins="*")
         socketio.run(app, host='0.0.0.0', debug=debug, port=listen_port)

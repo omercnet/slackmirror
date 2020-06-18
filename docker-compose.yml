@@ -7,7 +7,7 @@ services:
     environment:
       DEBUG:
       LOG_LEVEL:
-      LISTEN_PORT: 3000
+      PORT: 3000
       SLACK_SIGNING_SECRET: 
       SLACK_BOT_TOKEN: 
       MIRROR_CHANNEL: 
