@@ -53,7 +53,7 @@ def replace_coloncode_to_emoji(m):
 
 
 def id_to_obj(typ, _id):
-    logger.debug(f'Looking up {typ} {_id}')
+    app.logger.debug(f'Looking up {typ} {_id}')
     typ_to_api = {
         'user': 'users',
         'channel': 'conversations'
@@ -62,16 +62,16 @@ def id_to_obj(typ, _id):
     obj = cache[typ].get(_id)
     if not obj:
         obj = slack_client.api_call(f'{typ_to_api[typ]}.info', params={typ:_id}).get(typ)
-        logger.debug(f"Adding obj {_id} to cache as {obj.get('name')}")
+        app.logger.debug(f"Adding obj {_id} to cache as {obj.get('name')}")
         cache[typ][_id] = obj
 
     return obj
 
 
 def coloncode_to_emoji(coloncode):
-    logger.debug(f'converting {coloncode} to emoji')
+    app.logger.debug(f'converting {coloncode} to emoji')
     e = cache['emoji'].get(coloncode)
-    logger.debug(f'Found emoji {e}')
+    app.logger.debug(f'Found emoji {e}')
     if (e):
         if (e[:8] == 'https://'):
             return f'<img class="emoji" src="{e}" title="{coloncode}">'
@@ -89,7 +89,7 @@ def coloncode_to_emoji(coloncode):
 def message(message):
     if message.get('event'):
         event = message.get('event')
-        logger.debug(f'Event: {event}')
+        app.logger.debug(f'Event: {event}')
         try:
             event['channel'] = id_to_obj('channel', event['channel'])['name']
             if mirror_channel == event['channel']:
@@ -97,16 +97,16 @@ def message(message):
                 event['user'] = user['name']
                 event['image_48'] = user['profile']['image_48']
                 event['text'] = replace_slack_tags(event['text'])
-                logger.info(f"Received a message event: user {event['user']} in channel {event['channel']} says {event['text']}")
+                app.logger.info(f"Received a message event: user {event['user']} in channel {event['channel']} says {event['text']}")
                 msg = {'user': event['user'], 'text': event['text'], 'ts': event['ts']}
                 cache['messages'].append(event)
                 socketio.emit('msg', event)
             else:
-                logger.debug(f"Ignoring a message event: user {event['user']} in channel {event['channel']} says {event['text']}")
+                app.logger.debug(f"Ignoring a message event: user {event['user']} in channel {event['channel']} says {event['text']}")
         except SlackApiError as e:
             assert e.response["ok"] is False
             assert e.response["error"]  # str like 'invalid_auth', 'channel_not_found'
-            logger.error(f"Failed due to {e.response['error']}")
+            app.logger.error(f"Failed due to {e.response['error']}")
 
 @app.route('/debug')
 def hello_world():
