@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  slackmirror:
+    image: omercnet/slackmirror
+    build: .
+    environment:
+      DEBUG:
+      LOG_LEVEL:
+      LISTEN_PORT: 3000
+      SLACK_SIGNING_SECRET: 
+      SLACK_BOT_TOKEN: 
+      MIRROR_CHANNEL: 
+    ports:
+      - 3000:3000
+

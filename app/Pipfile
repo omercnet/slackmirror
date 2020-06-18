@@ -1,0 +1,20 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+slackeventsapi = "*"
+python-dotenv = "*"
+json-logging = "*"
+slackclient = "*"
+emoji = "*"
+waitress = "*"
+flask-socketio = "*"
+flask = "*"
+eventlet = "*"
+
+[requires]
+python_version = "3.8"

@@ -1,0 +1,157 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>Slack Log</title>
+</head>
+<body>
+    <script src="//code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.26.0/moment.min.js" integrity="sha256-5oApc/wMda1ntIEK4qoWJ4YItnV4fBHMwywunj8gPqc=" crossorigin="anonymous"></script>
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+
+            const fMsg = (msg) => {
+                return `<div class="slack-message">
+                    <img class="avatar" src="${msg.image_48}" aria-hidden="true" title="">
+                    <div class="content">
+                        <strong class="username">${msg.user}</strong>
+                        <small class="timestamp">${moment.unix(msg.ts).calendar()}</small>
+                        <div class="message">${msg.text}</div>
+                    </div>
+                </div>`
+            }
+
+            var socket = io();
+            socket.on('msg', msg => $('#log').append(fMsg(msg)));
+            $.get('/log', data => data.forEach( msg => $('#log').append(fMsg(msg))));
+        });
+    </script>
+    <div id="log"></div>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+    <style type="text/css">
+
+        @font-face {
+        font-family: 'Lato';
+        font-weight: 400;
+        font-style: normal; }
+
+        @font-face {
+            font-family: 'Lato';
+            font-weight: 900;
+            font-style: normal; }
+
+        @font-face {
+            font-family: 'Lato';
+            font-weight: 700;
+            font-style: normal; }
+        }
+
+        body {
+            font-family: 'Lato';
+            font-size: 15px;
+            color: #222;
+        }
+
+        div#main {
+            font-family: 'Lato';
+        }
+
+        .slack-message {
+            display: block;
+            clear: left;
+            padding-top: 0.5em;
+            padding-bottom: 0.5em;
+            overflow-x: hidden;
+            font-family: 'Lato';
+        }
+
+        .slack-message .avatar {
+            float: left;
+        }
+
+        .slack-message .content {
+            display: block;
+            margin-left: 60px;
+        }
+
+        .slack-message .username {
+            font-weight: 900;
+        }
+
+        .slack-message .readmore {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .slack-message .timestamp {
+            color: #888;
+        }
+
+        .slack-message .message {
+            color: #000;
+            word-wrap: break-word;
+            white-space: pre-line;
+        }
+
+        .reaction {
+            display: inline-block;
+            border: 1px solid #ccc;
+            color: #ccc;
+            border-radius: 10px;
+            font-size: 14px;
+            padding: 0px 8px 3px 8px;
+            margin-top: 0.5em;
+        }
+
+        .reaction + .reaction {
+            margin-left: 0.5em;
+        }
+
+        .reaction i {
+            position: relative;
+            top: 1px;
+            font-style: normal;
+            margin-right: 0.1em;
+        }
+
+        img.emoji {
+            width: 18px;
+            height: 18px;
+        }
+
+        .slack-message .document {
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;;
+            padding: 0 10px;
+            margin-top: 10px;
+        }
+
+        .slack-message .document h2 {
+            font-size: 16px;
+        }
+
+        .slack-message document {
+            display: block;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid #ccc;
+        }
+
+        a {
+            color: #08c;
+            text-decoration: none;
+        }
+
+        a:visited {
+            color: #0576b9;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</body>
+</html>
