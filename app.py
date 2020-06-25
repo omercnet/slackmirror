@@ -5,6 +5,7 @@ import logging
 from collections import deque
 
 import emoji
+import diskcache
 import json_logging
 from flask import Flask, render_template, jsonify
 from slack import WebClient
@@ -15,25 +16,28 @@ from slackeventsapi import SlackEventAdapter
 from flask_socketio import SocketIO
 
 
-load_dotenv()
-debug = os.environ.get('DEBUG')
-listen_port = os.environ.get('PORT')
-mirror_channel = os.environ.get('MIRROR_CHANNEL')
-slack_signing_secret = os.environ.get('SLACK_SIGNING_SECRET')
+load_dotenv(verbose=True)
+
+DEBUG = os.environ.get('DEBUG')
+PORT = os.environ.get('PORT')
+MIRROR_CHANNEL = os.environ.get('MIRROR_CHANNEL')
+SLACK_SIGNING_SECRET = os.environ.get('SLACK_SIGNING_SECRET')
+MAX_MESSAGES = int(os.environ.get('MAX_MESSAGES', 10))
 
 app = Flask('slackmirror')
 app.logger.setLevel(os.environ.get('LOG_LEVEL', 'DEBUG'))
 
-if not debug:
+if not DEBUG:
     json_logging.init_flask(enable_json=True)
     json_logging.init_request_instrument(app)
 
 slack_client = WebClient(os.environ.get('SLACK_BOT_TOKEN'))
-slack_events_adapter = SlackEventAdapter(slack_signing_secret, "/slack/events", server=app)
+slack_events_adapter = SlackEventAdapter(SLACK_SIGNING_SECRET, "/slack/events", server=app)
 CORS(app)
 logging.getLogger('flask_cors').level = logging.DEBUG
 
-cache = {'user': {}, 'channel': {}, 'emoji': {}, 'messages': deque(maxlen=10)}
+cache = diskcache.Index('cache/kv')
+messages = diskcache.Deque(directory='cache/messages')
 
 def replace_slack_tags(t):
     t = re.sub(r'<@([a-zA-Z0-9]+)>', replace_user_id_with_name, t)
@@ -59,20 +63,20 @@ def id_to_obj(typ, _id):
         'channel': 'conversations'
     }
 
-    obj = cache[typ].get(_id)
+    obj = cache.get(f'{typ}%{_id}')
     if not obj:
         obj = slack_client.api_call(f'{typ_to_api[typ]}.info', params={typ:_id}).get(typ)
         app.logger.debug(f"Adding obj {_id} to cache as {obj.get('name')}")
-        cache[typ][_id] = obj
+        cache[f'{typ}%{_id}'] = obj
 
     return obj
 
 
 def coloncode_to_emoji(coloncode):
     app.logger.debug(f'converting {coloncode} to emoji')
-    e = cache['emoji'].get(coloncode)
-    app.logger.debug(f'Found emoji {e}')
+    e = cache.get(f'{emoji}%{coloncode}')
     if (e):
+        app.logger.debug(f'Found emoji {e}')
         if (e[:8] == 'https://'):
             return f'<img class="emoji" src="{e}" title="{coloncode}">'
         
@@ -92,14 +96,16 @@ def message(message):
         app.logger.debug(f'Event: {event}')
         try:
             event['channel'] = id_to_obj('channel', event['channel'])['name']
-            if mirror_channel == event['channel']:
+            if MIRROR_CHANNEL == event['channel'] and event.get('user'):
                 user = id_to_obj('user', event['user'])
                 event['user'] = user['name']
                 event['image_48'] = user['profile']['image_48']
                 event['text'] = replace_slack_tags(event['text'])
                 app.logger.info(f"Received a message event: user {event['user']} in channel {event['channel']} says {event['text']}")
                 msg = {'user': event['user'], 'text': event['text'], 'ts': event['ts']}
-                cache['messages'].append(event)
+                messages.append(event)
+                if len(messages) > MAX_MESSAGES:
+                    messages.popleft()
                 socketio.emit('msg', event)
             else:
                 app.logger.debug(f"Ignoring a message event: user {event['user']} in channel {event['channel']} says {event['text']}")
@@ -115,12 +121,18 @@ def hello_world():
 
 @app.route('/log')
 def send_log():
-    return jsonify(list(cache['messages']))
+    return jsonify(list(messages))
 
 if __name__ == '__main__':
     with app.test_request_context():
         app.logger.info('Loading emojis')
-        cache['emoji'] = {k.replace(':', ''): v for k, v in emoji.unicode_codes.EMOJI_ALIAS_UNICODE.items()}
-        cache['emoji'].update(slack_client.api_call('emoji.list').get('emoji'))
+        for k, v in emoji.unicode_codes.EMOJI_ALIAS_UNICODE.items():
+            k = k.replace(':', '')
+            cache.setdefault(f'{emoji}%{k}', v)
+
+        for k, v in slack_client.api_call('emoji.list').get('emoji').items():
+            cache.setdefault(f'{emoji}%{k}', v)
+
         socketio = SocketIO(app, cors_allowed_origins="*")
-        socketio.run(app, host='0.0.0.0', debug=debug, port=listen_port)
+        app.logger.info('Monitoring #' + MIRROR_CHANNEL)
+        socketio.run(app, host='0.0.0.0', debug=DEBUG, port=PORT)

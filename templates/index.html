@@ -21,7 +21,7 @@
                 </div>`
             }
 
-            var socket = io('https://bsidestlv-slackmirror.herokuapp.com/');
+            var socket = io();
             socket.on('msg', msg => $('#log').append(fMsg(msg)));
             $.get('/log', data => data.forEach( msg => $('#log').append(fMsg(msg))));
         });

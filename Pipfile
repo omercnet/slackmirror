@@ -16,6 +16,7 @@ flask-socketio = "*"
 flask = "*"
 eventlet = "*"
 flask-cors = "*"
+diskcache = "*"
 
 [requires]
 python_version = "3.8"
