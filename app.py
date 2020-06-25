@@ -108,7 +108,7 @@ def message(message):
                     messages.popleft()
                 socketio.emit('msg', event)
             else:
-                app.logger.debug(f"Ignoring a message event: user {event['user']} in channel {event['channel']} says {event['text']}")
+                app.logger.debug(f"Ignoring event: {event}")
         except SlackApiError as e:
             assert e.response["ok"] is False
             assert e.response["error"]  # str like 'invalid_auth', 'channel_not_found'
