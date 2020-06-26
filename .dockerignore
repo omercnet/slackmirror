@@ -131,3 +131,5 @@ dmypy.json
 docker-compose.override.yml
 
 # End of https://www.toptal.com/developers/gitignore/api/python
+
+.redis/

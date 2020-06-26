@@ -5,39 +5,42 @@ import logging
 from collections import deque
 
 import emoji
-import diskcache
+import redis
 import json_logging
 from flask import Flask, render_template, jsonify
 from slack import WebClient
-from flask_cors import CORS
 from dotenv import load_dotenv
+from flask_cors import CORS
 from slack.errors import SlackApiError
 from slackeventsapi import SlackEventAdapter
 from flask_socketio import SocketIO
+from redis_collections import Deque, Dict
 
 
 load_dotenv(verbose=True)
 
-DEBUG = os.environ.get('DEBUG')
-PORT = os.environ.get('PORT')
-MIRROR_CHANNEL = os.environ.get('MIRROR_CHANNEL')
-SLACK_SIGNING_SECRET = os.environ.get('SLACK_SIGNING_SECRET')
-MAX_MESSAGES = int(os.environ.get('MAX_MESSAGES', 10))
+DEBUG = os.getenv('DEBUG')
+PORT = os.getenv('PORT')
+REDIS_URL = os.getenv('REDIS_URL')
+MAX_MESSAGES = int(os.getenv('MAX_MESSAGES', 10))
+MIRROR_CHANNEL = os.getenv('MIRROR_CHANNEL')
+SLACK_SIGNING_SECRET = os.getenv('SLACK_SIGNING_SECRET')
 
 app = Flask('slackmirror')
-app.logger.setLevel(os.environ.get('LOG_LEVEL', 'DEBUG'))
+app.logger.setLevel(os.getenv('LOG_LEVEL', 'DEBUG'))
 
 if not DEBUG:
     json_logging.init_flask(enable_json=True)
     json_logging.init_request_instrument(app)
 
-slack_client = WebClient(os.environ.get('SLACK_BOT_TOKEN'))
+slack_client = WebClient(os.getenv('SLACK_BOT_TOKEN'))
 slack_events_adapter = SlackEventAdapter(SLACK_SIGNING_SECRET, "/slack/events", server=app)
 CORS(app)
 logging.getLogger('flask_cors').level = logging.DEBUG
 
-cache = diskcache.Index('cache/kv')
-messages = diskcache.Deque(directory='cache/messages')
+r = redis.Redis().from_url(REDIS_URL)
+cache = Dict(key='cache', redis=r)
+messages = Deque(key='messages', redis=r, maxlen=MAX_MESSAGES)
 
 def replace_slack_tags(t):
     t = re.sub(r'<@([a-zA-Z0-9]+)>', replace_user_id_with_name, t)
@@ -104,8 +107,6 @@ def message(message):
                 app.logger.info(f"Received a message event: user {event['user']} in channel {event['channel']} says {event['text']}")
                 msg = {'user': event['user'], 'text': event['text'], 'ts': event['ts']}
                 messages.append(event)
-                if len(messages) > MAX_MESSAGES:
-                    messages.popleft()
                 socketio.emit('msg', event)
             else:
                 app.logger.debug(f"Ignoring event: {event}")
@@ -128,10 +129,10 @@ if __name__ == '__main__':
         app.logger.info('Loading emojis')
         for k, v in emoji.unicode_codes.EMOJI_ALIAS_UNICODE.items():
             k = k.replace(':', '')
-            cache.setdefault(f'{emoji}%{k}', v)
+            cache.setdefault(f'emoji%{k}', v)
 
         for k, v in slack_client.api_call('emoji.list').get('emoji').items():
-            cache.setdefault(f'{emoji}%{k}', v)
+            cache[f'emoji%{k}'] = v
 
         socketio = SocketIO(app, cors_allowed_origins="*")
         app.logger.info('Monitoring #' + MIRROR_CHANNEL)

@@ -16,7 +16,8 @@ flask-socketio = "*"
 flask = "*"
 eventlet = "*"
 flask-cors = "*"
-diskcache = "*"
+redis = "*"
+redis-collections = "*"
 
 [requires]
 python_version = "3.8"

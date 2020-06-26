@@ -6,11 +6,17 @@ services:
     build: .
     environment:
       DEBUG:
-      LOG_LEVEL:
+      LOG_LEVEL: INFO
       PORT: 3000
-      SLACK_SIGNING_SECRET: 
-      SLACK_BOT_TOKEN: 
-      MIRROR_CHANNEL: 
+      SLACK_SIGNING_SECRET: XXXX
+      SLACK_BOT_TOKEN: xoxb-
+      MIRROR_CHANNEL: general
+      REDIS_URL: redis://redis
     ports:
-      - 3000:3000
-
+      - 127.0.0.1:3000:3000
+  redis:
+    image: redis:6-alpine
+    volumes:
+      - .redis:/data
+    ports:
+      - 127.0.0.1:6379:6379
