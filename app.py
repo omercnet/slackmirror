@@ -77,7 +77,7 @@ def id_to_obj(typ, _id):
 
 def coloncode_to_emoji(coloncode):
     app.logger.debug(f'converting {coloncode} to emoji')
-    e = cache.get(f'{emoji}%{coloncode}')
+    e = cache.get(f'emoji%{coloncode}')
     if (e):
         app.logger.debug(f'Found emoji {e}')
         if (e[:8] == 'https://'):
