@@ -47,7 +47,7 @@ def replace_slack_tags(t):
     t = re.sub(r':([a-zA-Z0-9_-]+)(::[a-zA-Z0-9_-])?:', replace_coloncode_to_emoji, t)
     t = re.sub(r'<(https?://.+?)\|([^>]+?)>', rf'<a href="\1" target="_blank">\2</a>', t)
     t = re.sub(r'<(https?://.+?)>', rf'<a href="\1" target="_blank">\1</a>', t)
-    # t = re.sub('<#[a-zA-Z0-9]+\|([a-zA-Z0-9æøåÅÆØäöÄÖ\-_]+)>', f'#\1', t)
+    t = re.sub('<#[a-zA-Z0-9]+\|([a-zA-Z0-9æøåÅÆØäöÄÖ\-_]+)>', r"#\1", t)
     t = re.sub(r'\n{3,}', "\n\n", t)
 
     return t
