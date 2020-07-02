@@ -102,7 +102,7 @@ def message(message):
             if MIRROR_CHANNEL == event['channel'] and event.get('user'):
                 user = id_to_obj('user', event['user'])
                 msg = {
-                    'user': user['name'],
+                    'user': user['profile']['display_name_normalized'],
                     'image_48': user['profile']['image_48'],
                     'text': replace_slack_tags(event['text']),
                     'ts': event['ts']
