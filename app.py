@@ -106,7 +106,7 @@ def message(message):
                 event['text'] = replace_slack_tags(event['text'])
                 app.logger.info(f"Received a message event: user {event['user']} in channel {event['channel']} says {event['text']}")
                 msg = {'user': event['user'], 'text': event['text'], 'ts': event['ts']}
-                messages.append(event)
+                messages.append(msg)
                 socketio.emit('msg', event)
             else:
                 app.logger.debug(f"Ignoring event: {event}")
