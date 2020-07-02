@@ -101,13 +101,15 @@ def message(message):
             event['channel'] = id_to_obj('channel', event['channel'])['name']
             if MIRROR_CHANNEL == event['channel'] and event.get('user'):
                 user = id_to_obj('user', event['user'])
-                event['user'] = user['name']
-                event['image_48'] = user['profile']['image_48']
-                event['text'] = replace_slack_tags(event['text'])
-                app.logger.info(f"Received a message event: user {event['user']} in channel {event['channel']} says {event['text']}")
-                msg = {'user': event['user'], 'text': event['text'], 'ts': event['ts']}
+                msg = {
+                    'user': user['name'],
+                    'image_48': user['profile']['image_48'],
+                    'text': replace_slack_tags(event['text']),
+                    'ts': event['ts']
+                }
+                app.logger.info(msg)
                 messages.append(msg)
-                socketio.emit('msg', event)
+                socketio.emit('msg', msg)
             else:
                 app.logger.debug(f"Ignoring event: {event}")
         except SlackApiError as e:
