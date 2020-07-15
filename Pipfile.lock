@@ -152,11 +152,11 @@
         },
         "json-logging": {
             "hashes": [
-                "sha256:b9bdc822af2c92e1e6360b73691e4fbbb89aaf570542b17ad1af7c6e2287bf8f",
-                "sha256:c786c52ed5f7cd077757151814d6a81cd485ab1775e42e58a63af7d8082ad8ce"
+                "sha256:6ec3468d5f95b56e63ae7b487695e39214b2a017beda6718ab2b1bec24d9b853",
+                "sha256:e1ee12821971558e28fd9f9b2d297b27091d7a932b26646644a71cc1c3da0471"
             ],
             "index": "pypi",
-            "version": "==1.2.0"
+            "version": "==1.2.1"
         },
         "markupsafe": {
             "hashes": [
