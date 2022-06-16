@@ -15,7 +15,7 @@ services:
     ports:
       - 127.0.0.1:3000:3000
   redis:
-    image: redis:6-alpine
+    image: redis:7-alpine
     volumes:
       - .redis:/data
     ports:
