@@ -129,7 +129,7 @@ def send_log():
 if __name__ == '__main__':
     with app.test_request_context():
         app.logger.info('Loading emojis')
-        for k, v in emoji.unicode_codes.EMOJI_ALIAS_UNICODE.items():
+        for k, v in emoji.unicode_codes.UNICODE_EMOJI.items():
             k = k.replace(':', '')
             cache.setdefault(f'emoji%{k}', v)
 
